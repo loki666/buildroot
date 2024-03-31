@@ -1,0 +1,8 @@
+# wireless core
+CONFIG_WIRELESS=y
+CONFIG_CFG80211_WEXT=y
+CONFIG_RTW88=m
+CONFIG_RTW88_8821CS=m
+
+# wireless drivers
+CONFIG_WLAN=y

@@ -1,0 +1,447 @@
+From 9a7823bdef0458d5edd381eb89d7dbd63b0e108f Mon Sep 17 00:00:00 2001
+From: Philippe Simons <simons.philippe@gmail.com>
+Date: Wed, 3 Apr 2024 18:25:52 +0200
+Subject: [PATCH] Create sun50i-h700-anbernic-rg35xxplus.dts
+
+---
+ .../dts/allwinner/sun50i-h700-anbernic-rg35xxplus.dts   | 431 ++++++++++++++++++
+ 1 file changed, 431 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xxplus.dts
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xxplus.dts b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xxplus.dts
+new file mode 100644
+index 00000000000000..2a84b6c315f63b
+--- /dev/null
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xxplus.dts
+@@ -0,0 +1,431 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Copyright (C) 2024 Andre Przywara <andre.przywara@arm.com>.
++ * Copyright (C) 2024 Ryan Walklin <ryan@testtoast.com>.
++ */
++
++/dts-v1/;
++
++#include "sun50i-h616.dtsi"
++#include "sun50i-h616-cpu-opp.dtsi"
++//#include "sun50i-h616-gpu-opp.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/linux-event-codes.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
++#include <dt-bindings/leds/common.h>
++
++/ {
++    model = "Anbernic RG35XX Plus";
++    compatible = "anbernic,rg35xx-plus", "allwinner,sun50i-h700",
++                 "allwinner,sun50i-h616";
++
++    aliases {
++        serial0 = &uart0;
++    };
++
++    chosen {
++        stdout-path = "serial0:115200n8";
++    };
++/*
++    connector {
++        compatible = "hdmi-connector";
++        type = "c";
++
++        port {
++            hdmi_con_in: endpoint {
++                remote-endpoint = <&hdmi_out_con>;
++            };
++        };
++    };
++*/
++/*
++    spi {
++        #address-cells = <1>;
++        #size-cells = <0>;
++
++        display@0 {
++            compatible = "leadtek,ltk035c5444t-spi", "newvision,nv3052c";
++            reg = <0>;
++
++            spi-max-frequency = <15000000>;
++            spi-3wire;
++            //reset-gpios = <&gpe 2 GPIO_ACTIVE_LOW>;
++            //backlight = <&backlight>;
++            power-supply = <&vcc>;
++
++            port {
++                panel_input: endpoint {
++                    remote-endpoint = <&panel_output>;
++                };
++            };
++        };
++    };
++*/
++    leds {
++        compatible = "gpio-leds";
++
++        led-0 {
++            function = LED_FUNCTION_POWER;
++            color = <LED_COLOR_ID_GREEN>;
++            gpios = <&pio 8 12 GPIO_ACTIVE_HIGH>; /* PI12 */
++            default-state = "on";
++        };
++    };
++
++    gpio-keys {
++       compatible = "gpio-keys";
++
++       keyUp {
++           label = "D-Pad Up";
++           gpios = <&pio 0 6 GPIO_ACTIVE_LOW>; /* PA6 */
++           linux,input-type = <EV_KEY>;
++           linux,code = <BTN_DPAD_UP>;
++        };
++
++        keyDown {
++            label = "D-Pad Down";
++            gpios = <&pio 4 0 GPIO_ACTIVE_LOW>; /* PE0 */
++            linux,input-type = <EV_KEY>;
++            linux,code = <BTN_DPAD_DOWN>;
++        };
++
++        keyLeft {
++            label = "D-Pad left";
++            gpios = <&pio 0 8 GPIO_ACTIVE_LOW>; /* PA8 */
++            linux,input-type = <EV_KEY>;
++            linux,code = <BTN_DPAD_LEFT>;
++        };
++
++        keyRight {
++            label = "D-Pad Right";
++            gpios = <&pio 0 9 GPIO_ACTIVE_LOW>; /* PA9 */
++            linux,input-type = <EV_KEY>;
++            linux,code = <BTN_DPAD_RIGHT>;
++        };
++
++        keyA {
++            label = "Action-Pad A";
++            gpios = <&pio 0 0 GPIO_ACTIVE_LOW>; /* PA0 */
++            linux,input-type = <EV_KEY>;
++            linux,code = <BTN_EAST>;
++        };
++
++        keyB {
++            label = "Action-Pad B";
++            gpios = <&pio 0 1 GPIO_ACTIVE_LOW>; /* PA1 */
++            linux,input-type = <EV_KEY>;
++            linux,code = <BTN_SOUTH>;
++        };
++
++        keyX {
++            label = "Action-Pad X";
++            gpios = <&pio 0 3 GPIO_ACTIVE_LOW>; /* PA3 */
++            linux,input-type = <EV_KEY>;
++            linux,code = <BTN_NORTH>;
++        };
++
++        keyY {
++            label = "Action Pad Y";
++            gpios = <&pio 0 2 GPIO_ACTIVE_LOW>; /* PA2 */
++            linux,input-type = <EV_KEY>;
++            linux,code = <BTN_WEST>;
++        };
++
++        keyStart {
++            label = "Key Start";
++            gpios = <&pio 0 4 GPIO_ACTIVE_LOW>; /* PA4 */
++            linux,input-type = <EV_KEY>;
++            linux,code = <BTN_START>;
++        };
++
++        keySEl {
++            label = "Key Select";
++            gpios = <&pio 0 5 GPIO_ACTIVE_LOW>; /* PA5 */
++            linux,input-type = <EV_KEY>;
++            linux,code = <BTN_SELECT>;
++        };
++
++        keyL1 {
++            label = "Key L1";
++            gpios = <&pio 0 10 GPIO_ACTIVE_LOW>; /* PA10 */
++            linux,input-type = <EV_KEY>;
++            linux,code = <BTN_TL>;
++        };
++
++        keyL2 {
++            label = "Key L2";
++            gpios = <&pio 0 11 GPIO_ACTIVE_LOW>; /* PA11 */
++            linux,input-type = <EV_KEY>;
++            linux,code = <BTN_TL2>;
++        };
++
++        keyR1 {
++            label = "Key R1";
++            gpios = <&pio 0 12 GPIO_ACTIVE_LOW>; /* PA12 */
++            linux,input-type = <EV_KEY>;
++            linux,code = <BTN_TR>;
++        };
++
++        keyR2 {
++            label = "Key R2";
++            gpios = <&pio 0 7 GPIO_ACTIVE_LOW>; /* PA7 */
++            linux,input-type = <EV_KEY>;
++            linux,code = <BTN_TR2>;
++        };
++/*
++        keyL3 {
++            label = "GPIO Key L3";
++            gpios = <0x4b 0x04 0x08 0x00 0x01 0x02 0x01>;
++            linux,code = <0x139>;
++        };
++
++        keyR3 {
++            label = "GPIO Key R3";
++            gpios = <0x4b 0x04 0x09 0x00 0x01 0x02 0x01>;
++            linux,code = <0x13c>;
++        };
++*/
++        keyMenu {
++            label = "Key Menu";
++            gpios = <&pio 4 3 GPIO_ACTIVE_LOW>; /* PE3 */
++            linux,input-type = <EV_KEY>;
++            linux,code = <BTN_MODE>;
++        };
++
++        keyVol+ {
++            label = "Key Volume Up";
++            gpios = <&pio 4 1 GPIO_ACTIVE_LOW>; /* PE1 */
++            linux,input-type = <EV_KEY>;
++            linux,code = <KEY_VOLUMEUP>;
++        };
++
++        keyvol- {
++            label = "Key Volume Down";
++            gpios = <&pio 4 2 GPIO_ACTIVE_LOW>; /* PE2 */
++            linux,input-type = <EV_KEY>;
++            linux,code = <KEY_VOLUMEDOWN>;
++        };
++    };
++
++    reg_vcc5v: vcc5v {
++        /* board wide 5V supply directly from the USB type-C input */
++        compatible = "regulator-fixed";
++        regulator-name = "vcc-5v";
++        regulator-min-microvolt = <5000000>;
++        regulator-max-microvolt = <5000000>;
++        regulator-always-on;
++    };
++
++    reg_vcc3v3: vcc3v3 {
++        /* placeholder 3.3V regulator for now, use AXP717 rails */
++        compatible = "regulator-fixed";
++        regulator-name = "vcc-3v3";
++        regulator-min-microvolt = <3300000>;
++        regulator-max-microvolt = <3300000>;
++        regulator-always-on;
++    };
++
++    reg_vcc1v8: vcc1v8 {
++        /* placeholder 1.8V regulator for now, use AXP717 rails */
++        compatible = "regulator-fixed";
++        regulator-name = "vcc-1v8";
++        regulator-min-microvolt = <1800000>;
++        regulator-max-microvolt = <1800000>;
++        regulator-always-on;
++    };
++
++    wifi_pwrseq: wifi_pwrseq {
++        compatible = "mmc-pwrseq-simple";
++        clocks = <&rtc CLK_OSC32K_FANOUT>;
++        clock-names = "ext_clock";
++        pinctrl-0 = <&x32clk_fanout_pin>;
++        pinctrl-names = "default";
++        reset-gpios = <&pio 6 18 GPIO_ACTIVE_LOW>; /* PG18 */
++    };
++};
++
++&cpu0 {
++   cpu-supply = <&reg_dcdc1>;
++};
++
++&ehci0 {
++    status = "okay";
++};
++
++&mmc0 {
++    vmmc-supply = <&reg_vcc3v3>;
++    cd-gpios = <&pio 5 6 GPIO_ACTIVE_LOW>;  /* PF6 */
++    bus-width = <4>;
++    status = "okay";
++};
++
++/* SDIO WiFi RTL8821CS, powered by CLDO4, regon=PG18, hostwake=PG15 */
++&mmc1 {
++    vmmc-supply = <&reg_cldo4>;
++    vqmmc-supply = <&reg_vcc1v8>;
++    mmc-pwrseq = <&wifi_pwrseq>;
++    bus-width = <4>;
++    non-removable;
++    status = "okay";
++
++    sdio_wifi: wifi@1 {
++       reg = <1>;
++       interrupt-parent = <&pio>;
++       interrupts = <6 15 IRQ_TYPE_LEVEL_LOW>; /* PG15 */
++       interrupt-names = "host-wake";
++    };
++};
++
++/* second SD card, to be confirmed, references ALDO1 */
++&mmc2 {
++    vmmc-supply = <&reg_vcc3v3>;
++    vqmmc-supply = <&reg_aldo1>;
++    broken-cd;
++    //cd-gpios = <&pio 4 16 GPIO_ACTIVE_LOW>;  /* PE16 */
++    bus-width = <4>;
++    status = "okay";
++};
++
++&ohci0 {
++    status = "okay";
++};
++
++&r_rsb {
++   status = "okay";
++
++   axp717: pmic@3a3 {
++       compatible = "x-powers,axp717";
++       interrupt-controller;
++       #interrupt-cells = <1>;
++       reg = <0x3a3>;
++
++       regulators {
++           reg_dcdc1: dcdc1 {
++               regulator-always-on;
++               regulator-min-microvolt = <810000>;
++               regulator-max-microvolt = <1240000>;
++               regulator-name = "vdd-cpu";
++           };
++
++           reg_dcdc2: dcdc2 {
++               regulator-always-on;
++               regulator-min-microvolt = <940000>;
++               regulator-max-microvolt = <940000>;
++               regulator-name = "vdd-sys";
++           };
++
++           reg_dcdc3: dcdc3 {
++               regulator-always-on;
++               regulator-min-microvolt = <1100000>;
++               regulator-max-microvolt = <1100000>;
++               regulator-name = "vdd-dram";
++           };
++
++           reg_aldo1: aldo1 {
++               regulator-always-on;
++               regulator-min-microvolt = <1800000>;
++               regulator-max-microvolt = <3300000>;
++               regulator-name = "vcc-sd2";
++           };
++
++           reg_bldo2: bldo2 {
++               regulator-always-on;
++               regulator-min-microvolt = <1800000>;
++               regulator-max-microvolt = <1800000>;
++               regulator-name = "vcc-1v8";
++           };
++
++           reg_cldo4: cldo4 {
++               regulator-min-microvolt = <3300000>;
++               regulator-max-microvolt = <3300000>;
++               regulator-name = "vcc-wifi";
++           };
++       };
++   };
++};
++/*
++&de {
++    status = "okay";
++};
++
++&gpu {
++    mali-supply = <&reg_dcdc2>;
++    power-domains = <&r_ccu 0>;
++    operating-points-v2 = <&gpu_opp_table>;
++};
++
++&hdmi {
++    hvcc-supply = <&reg_bldo2>;
++    status = "okay";
++};
++
++&hdmi_out {
++    hdmi_out_con: endpoint {
++        remote-endpoint = <&hdmi_con_in>;
++    };
++};
++
++&ahub_codec {
++    status = "okay";
++};
++
++&ahub_cpudai0 {
++    status = "okay";
++};
++
++&ahub_cpudai1 {
++    status = "okay";
++};
++
++&ahub_cpudai2 {
++    status = "okay";
++};
++
++&sndahub {
++    status = "okay";
++};
++
++&codec {
++    allwinner,audio-routing =
++        "Line Out", "LINEOUT";
++    status = "okay";
++};
++
++&hdmi_audio {
++    status = "okay";
++};
++
++&ahub_i2s1 {
++    status = "okay";
++};
++*/
++&uart0 {
++    pinctrl-names = "default";
++    pinctrl-0 = <&uart0_ph_pins>;
++    status = "okay";
++};
++
++/* Bluetooth RTL8821CS, RST_N: PG19, BT_WAKE: PG17, BT_HOSTWAKE: PG16 */
++&uart1 {
++    pinctrl-names = "default";
++    pinctrl-0 = <&uart1_pins>, <&uart1_rts_cts_pins>;
++    uart-has-rtscts;
++    status = "okay";
++
++    bluetooth {
++        compatible = "realtek,rtl8821cs-bt", "realtek,rtl8723bs-bt";
++        device-wake-gpios = <&pio 6 17 GPIO_ACTIVE_HIGH>;
++        enable-gpios = <&pio 6 19 GPIO_ACTIVE_HIGH>;
++        host-wake-gpios = <&pio 6 16 GPIO_ACTIVE_HIGH>;
++    };
++};
++
++/* the AXP717 has USB type-C role switch functionality, to be implemented */
++&usbotg {
++    dr_mode = "host";   /* USB type-C receptable */
++    status = "okay";
++};
++
++&usbphy {
++    status = "okay";
++};

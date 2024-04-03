@@ -31,7 +31,4 @@ sed -e "$(generic_getty)" \
 	-e "s/%PARTUUID%/$PARTUUID/g" \
 	"board/anbernic/rg35xx-plus/extlinux.conf" > "$TARGET_DIR/boot/extlinux/extlinux.conf"
 
-mkdir -p "$TARGET_DIR/boot/allwinner"
-mv "$TARGET_DIR/boot/sun50i-h700-anbernic-rg35xxplus.dtb" "$TARGET_DIR/boot/allwinner/sun50i-h700-anbernic-rg35xxplus.dtb"
-
 sed "s/%PARTUUID%/$PARTUUID/g" "board/anbernic/rg35xx-plus/genimage.cfg" > "$BINARIES_DIR/genimage.cfg"

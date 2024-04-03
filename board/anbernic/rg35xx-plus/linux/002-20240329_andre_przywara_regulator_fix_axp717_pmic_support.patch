@@ -1,0 +1,249 @@
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH 1/4] regulator: axp20x: AXP717: fix LDO supply rails and
+ off-by-ones
+From: Andre Przywara <andre.przywara@arm.com>
+Date: Fri, 29 Mar 2024 23:50:30 +0000
+Message-Id: <20240329235033.25309-2-andre.przywara@arm.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+The X-Powers AXP717 PMIC has separate input supply pins for each group
+of LDOs, so they are not all using the same DCDC1 input, as described
+currently.
+
+Replace the "supply" member of each LDO description with the respective
+group supply name, so that the supply dependencies can be correctly
+described in the devicetree.
+Also fix two off-by-ones in the regulator macros, after some double
+checking the numbers against the datasheet.
+
+Fixes: d2ac3df75c3a ("regulator: axp20x: add support for the AXP717")
+Signed-off-by: Andre Przywara <andre.przywara@arm.com>
+---
+ drivers/regulator/axp20x-regulator.c | 28 ++++++++++++++--------------
+ 1 file changed, 14 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/regulator/axp20x-regulator.c b/drivers/regulator/axp20x-regulator.c
+index 34fcdd82b2eaa..3907606b091f6 100644
+--- a/drivers/regulator/axp20x-regulator.c
++++ b/drivers/regulator/axp20x-regulator.c
+@@ -140,7 +140,7 @@
+ 
+ #define AXP717_DCDC1_NUM_VOLTAGES	88
+ #define AXP717_DCDC2_NUM_VOLTAGES	107
+-#define AXP717_DCDC3_NUM_VOLTAGES	104
++#define AXP717_DCDC3_NUM_VOLTAGES	103
+ #define AXP717_DCDC_V_OUT_MASK		GENMASK(6, 0)
+ #define AXP717_LDO_V_OUT_MASK		GENMASK(4, 0)
+ 
+@@ -766,7 +766,7 @@ static const struct linear_range axp717_dcdc1_ranges[] = {
+ static const struct linear_range axp717_dcdc2_ranges[] = {
+ 	REGULATOR_LINEAR_RANGE(500000,   0,  70,  10000),
+ 	REGULATOR_LINEAR_RANGE(1220000, 71,  87,  20000),
+-	REGULATOR_LINEAR_RANGE(1600000, 88, 107, 100000),
++	REGULATOR_LINEAR_RANGE(1600000, 88, 106, 100000),
+ };
+ 
+ static const struct linear_range axp717_dcdc3_ranges[] = {
+@@ -790,40 +790,40 @@ static const struct regulator_desc axp717_regulators[] = {
+ 	AXP_DESC(AXP717, DCDC4, "dcdc4", "vin4", 1000, 3700, 100,
+ 		 AXP717_DCDC4_CONTROL, AXP717_DCDC_V_OUT_MASK,
+ 		 AXP717_DCDC_OUTPUT_CONTROL, BIT(3)),
+-	AXP_DESC(AXP717, ALDO1, "aldo1", "vin1", 500, 3500, 100,
++	AXP_DESC(AXP717, ALDO1, "aldo1", "aldoin", 500, 3500, 100,
+ 		 AXP717_ALDO1_CONTROL, AXP717_LDO_V_OUT_MASK,
+ 		 AXP717_LDO0_OUTPUT_CONTROL, BIT(0)),
+-	AXP_DESC(AXP717, ALDO2, "aldo2", "vin1", 500, 3500, 100,
++	AXP_DESC(AXP717, ALDO2, "aldo2", "aldoin", 500, 3500, 100,
+ 		 AXP717_ALDO2_CONTROL, AXP717_LDO_V_OUT_MASK,
+ 		 AXP717_LDO0_OUTPUT_CONTROL, BIT(1)),
+-	AXP_DESC(AXP717, ALDO3, "aldo3", "vin1", 500, 3500, 100,
++	AXP_DESC(AXP717, ALDO3, "aldo3", "aldoin", 500, 3500, 100,
+ 		 AXP717_ALDO3_CONTROL, AXP717_LDO_V_OUT_MASK,
+ 		 AXP717_LDO0_OUTPUT_CONTROL, BIT(2)),
+-	AXP_DESC(AXP717, ALDO4, "aldo4", "vin1", 500, 3500, 100,
++	AXP_DESC(AXP717, ALDO4, "aldo4", "aldoin", 500, 3500, 100,
+ 		 AXP717_ALDO4_CONTROL, AXP717_LDO_V_OUT_MASK,
+ 		 AXP717_LDO0_OUTPUT_CONTROL, BIT(3)),
+-	AXP_DESC(AXP717, BLDO1, "bldo1", "vin1", 500, 3500, 100,
++	AXP_DESC(AXP717, BLDO1, "bldo1", "bldoin", 500, 3500, 100,
+ 		 AXP717_BLDO1_CONTROL, AXP717_LDO_V_OUT_MASK,
+ 		 AXP717_LDO0_OUTPUT_CONTROL, BIT(4)),
+-	AXP_DESC(AXP717, BLDO2, "bldo2", "vin1", 500, 3500, 100,
++	AXP_DESC(AXP717, BLDO2, "bldo2", "bldoin", 500, 3500, 100,
+ 		 AXP717_BLDO2_CONTROL, AXP717_LDO_V_OUT_MASK,
+ 		 AXP717_LDO0_OUTPUT_CONTROL, BIT(5)),
+-	AXP_DESC(AXP717, BLDO3, "bldo3", "vin1", 500, 3500, 100,
++	AXP_DESC(AXP717, BLDO3, "bldo3", "bldoin", 500, 3500, 100,
+ 		 AXP717_BLDO3_CONTROL, AXP717_LDO_V_OUT_MASK,
+ 		 AXP717_LDO0_OUTPUT_CONTROL, BIT(6)),
+-	AXP_DESC(AXP717, BLDO4, "bldo4", "vin1", 500, 3500, 100,
++	AXP_DESC(AXP717, BLDO4, "bldo4", "bldoin", 500, 3500, 100,
+ 		 AXP717_BLDO4_CONTROL, AXP717_LDO_V_OUT_MASK,
+ 		 AXP717_LDO0_OUTPUT_CONTROL, BIT(7)),
+-	AXP_DESC(AXP717, CLDO1, "cldo1", "vin1", 500, 3500, 100,
++	AXP_DESC(AXP717, CLDO1, "cldo1", "cldoin", 500, 3500, 100,
+ 		 AXP717_CLDO1_CONTROL, AXP717_LDO_V_OUT_MASK,
+ 		 AXP717_LDO1_OUTPUT_CONTROL, BIT(0)),
+-	AXP_DESC(AXP717, CLDO2, "cldo2", "vin1", 500, 3500, 100,
++	AXP_DESC(AXP717, CLDO2, "cldo2", "cldoin", 500, 3500, 100,
+ 		 AXP717_CLDO2_CONTROL, AXP717_LDO_V_OUT_MASK,
+ 		 AXP717_LDO1_OUTPUT_CONTROL, BIT(1)),
+-	AXP_DESC(AXP717, CLDO3, "cldo3", "vin1", 500, 3500, 100,
++	AXP_DESC(AXP717, CLDO3, "cldo3", "cldoin", 500, 3500, 100,
+ 		 AXP717_CLDO3_CONTROL, AXP717_LDO_V_OUT_MASK,
+ 		 AXP717_LDO1_OUTPUT_CONTROL, BIT(2)),
+-	AXP_DESC(AXP717, CLDO4, "cldo4", "vin1", 500, 3500, 100,
++	AXP_DESC(AXP717, CLDO4, "cldo4", "cldoin", 500, 3500, 100,
+ 		 AXP717_CLDO4_CONTROL, AXP717_LDO_V_OUT_MASK,
+ 		 AXP717_LDO1_OUTPUT_CONTROL, BIT(3)),
+ 	AXP_DESC(AXP717, CPUSLDO, "cpusldo", "vin1", 500, 1400, 50,
+-- 
+2.35.8
+
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH 2/4] dt-bindings: mfd: x-powers,axp152: add boost regulator
+From: Andre Przywara <andre.przywara@arm.com>
+Date: Fri, 29 Mar 2024 23:50:31 +0000
+Message-Id: <20240329235033.25309-3-andre.przywara@arm.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+The X-Powers AXP717 contains a boost regulator, that it meant to provide
+the 5V USB VBUS voltage when the devices operates on battery.
+
+Add the name "boost" to the regexp describing the allowed node names,
+to allow the regulator to be described in the devicetree.
+
+Signed-off-by: Andre Przywara <andre.przywara@arm.com>
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+---
+ Documentation/devicetree/bindings/mfd/x-powers,axp152.yaml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Documentation/devicetree/bindings/mfd/x-powers,axp152.yaml b/Documentation/devicetree/bindings/mfd/x-powers,axp152.yaml
+index b8e8db0d58e9c..14ab367fc8871 100644
+--- a/Documentation/devicetree/bindings/mfd/x-powers,axp152.yaml
++++ b/Documentation/devicetree/bindings/mfd/x-powers,axp152.yaml
+@@ -274,7 +274,7 @@ properties:
+           Defines the work frequency of DC-DC in kHz.
+ 
+     patternProperties:
+-      "^(([a-f])?ldo[0-9]|dcdc[0-7a-e]|ldo(_|-)io(0|1)|(dc1)?sw|rtc(_|-)ldo|cpusldo|drivevbus|dc5ldo)$":
++      "^(([a-f])?ldo[0-9]|dcdc[0-7a-e]|ldo(_|-)io(0|1)|(dc1)?sw|rtc(_|-)ldo|cpusldo|drivevbus|dc5ldo|boost)$":
+         $ref: /schemas/regulator/regulator.yaml#
+         type: object
+         unevaluatedProperties: false
+-- 
+2.35.8
+
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH 3/4] mfd: axp20x: AXP717: Add support for boost regulator
+From: Andre Przywara <andre.przywara@arm.com>
+Date: Fri, 29 Mar 2024 23:50:32 +0000
+Message-Id: <20240329235033.25309-4-andre.przywara@arm.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+The AXP717 also contains a boost regulator, to provide the 5V USB VBUS
+rail when running on battery.
+
+Add the registers to the MFD description to be able to use them from the
+regulator driver.
+
+Signed-off-by: Andre Przywara <andre.przywara@arm.com>
+---
+ drivers/mfd/axp20x.c       | 2 ++
+ include/linux/mfd/axp20x.h | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/drivers/mfd/axp20x.c b/drivers/mfd/axp20x.c
+index 48ce6ea693cea..62f3dd254d57b 100644
+--- a/drivers/mfd/axp20x.c
++++ b/drivers/mfd/axp20x.c
+@@ -209,6 +209,8 @@ static const struct regmap_access_table axp313a_volatile_table = {
+ };
+ 
+ static const struct regmap_range axp717_writeable_ranges[] = {
++	regmap_reg_range(AXP717_MODULE_EN_CONTROL, AXP717_MODULE_EN_CONTROL),
++	regmap_reg_range(AXP717_BOOST_CONTROL, AXP717_BOOST_CONTROL),
+ 	regmap_reg_range(AXP717_IRQ0_EN, AXP717_IRQ4_EN),
+ 	regmap_reg_range(AXP717_DCDC_OUTPUT_CONTROL, AXP717_CPUSLDO_CONTROL),
+ };
+diff --git a/include/linux/mfd/axp20x.h b/include/linux/mfd/axp20x.h
+index 8c0a33a2e9ce2..4dad54fdf67ee 100644
+--- a/include/linux/mfd/axp20x.h
++++ b/include/linux/mfd/axp20x.h
+@@ -115,6 +115,8 @@ enum axp20x_variants {
+ #define AXP313A_IRQ_STATE		0x21
+ 
+ #define AXP717_ON_INDICATE		0x00
++#define AXP717_MODULE_EN_CONTROL	0x19
++#define AXP717_BOOST_CONTROL		0x1e
+ #define AXP717_IRQ0_EN			0x40
+ #define AXP717_IRQ1_EN			0x41
+ #define AXP717_IRQ2_EN			0x42
+-- 
+2.35.8
+
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH 4/4] regulator: axp20x: AXP717: Add boost regulator
+From: Andre Przywara <andre.przywara@arm.com>
+Date: Fri, 29 Mar 2024 23:50:33 +0000
+Message-Id: <20240329235033.25309-5-andre.przywara@arm.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+The AXP717 also contains an adjustable boost regulator, to provide the
+5V USB VBUS rail when running on battery.
+
+Add the regulator description that states the voltage range this
+regulator can cover.
+
+Signed-off-by: Andre Przywara <andre.przywara@arm.com>
+---
+ drivers/regulator/axp20x-regulator.c | 4 ++++
+ include/linux/mfd/axp20x.h           | 1 +
+ 2 files changed, 5 insertions(+)
+
+diff --git a/drivers/regulator/axp20x-regulator.c b/drivers/regulator/axp20x-regulator.c
+index 3907606b091f6..71407c5810941 100644
+--- a/drivers/regulator/axp20x-regulator.c
++++ b/drivers/regulator/axp20x-regulator.c
+@@ -143,6 +143,7 @@
+ #define AXP717_DCDC3_NUM_VOLTAGES	103
+ #define AXP717_DCDC_V_OUT_MASK		GENMASK(6, 0)
+ #define AXP717_LDO_V_OUT_MASK		GENMASK(4, 0)
++#define AXP717_BOOST_V_OUT_MASK		GENMASK(7, 4)
+ 
+ #define AXP803_PWR_OUT_DCDC1_MASK	BIT_MASK(0)
+ #define AXP803_PWR_OUT_DCDC2_MASK	BIT_MASK(1)
+@@ -829,6 +830,9 @@ static const struct regulator_desc axp717_regulators[] = {
+ 	AXP_DESC(AXP717, CPUSLDO, "cpusldo", "vin1", 500, 1400, 50,
+ 		 AXP717_CPUSLDO_CONTROL, AXP717_LDO_V_OUT_MASK,
+ 		 AXP717_LDO1_OUTPUT_CONTROL, BIT(4)),
++	AXP_DESC(AXP717, BOOST, "boost", "vin1", 4550, 5510, 64,
++		 AXP717_BOOST_CONTROL, AXP717_BOOST_V_OUT_MASK,
++		 AXP717_MODULE_EN_CONTROL, BIT(4)),
+ };
+ 
+ /* DCDC ranges shared with AXP813 */
+diff --git a/include/linux/mfd/axp20x.h b/include/linux/mfd/axp20x.h
+index 4dad54fdf67ee..5e86b976c4caa 100644
+--- a/include/linux/mfd/axp20x.h
++++ b/include/linux/mfd/axp20x.h
+@@ -486,6 +486,7 @@ enum {
+ 	AXP717_CLDO3,
+ 	AXP717_CLDO4,
+ 	AXP717_CPUSLDO,
++	AXP717_BOOST,
+ 	AXP717_REG_ID_MAX,
+ };
+ 
+-- 
+2.35.8
+

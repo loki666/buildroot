@@ -1,0 +1,39 @@
+From b87f5a4df75996d5674b66d7aac9547962433690 Mon Sep 17 00:00:00 2001
+From: Philippe Simons <simons.philippe@gmail.com>
+Date: Sat, 15 Jun 2024 14:59:14 +0200
+Subject: [PATCH] disable opp-1512000000
+
+---
+ .../boot/dts/allwinner/sun50i-h616-cpu-opp.dtsi  | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h616-cpu-opp.dtsi b/arch/arm64/boot/dts/allwinner/sun50i-h616-cpu-opp.dtsi
+index dd10aaf472b6..55c584bae02e 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h616-cpu-opp.dtsi
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h616-cpu-opp.dtsi
+@@ -98,14 +98,14 @@ opp-1416000000 {
+ 			opp-supported-hw = <0x2d>;
+ 		};
+ 
+-		opp-1512000000 {
+-			opp-hz = /bits/ 64 <1512000000>;
+-			opp-microvolt-speed1 = <1100000>;
+-			opp-microvolt-speed3 = <1100000>;
+-			opp-microvolt-speed5 = <1160000>;
+-			clock-latency-ns = <244144>; /* 8 32k periods */
+-			opp-supported-hw = <0x2a>;
+-		};
++//		opp-1512000000 {
++//			opp-hz = /bits/ 64 <1512000000>;
++//			opp-microvolt-speed1 = <1100000>;
++//			opp-microvolt-speed3 = <1100000>;
++//			opp-microvolt-speed5 = <1160000>;
++//			clock-latency-ns = <244144>; /* 8 32k periods */
++//			opp-supported-hw = <0x2a>;
++//		};
+ 	};
+ };
+ 
+-- 
+2.34.1
+

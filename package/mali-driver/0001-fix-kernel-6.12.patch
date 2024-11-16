@@ -1,0 +1,82 @@
+From 4d9373d897389cbef4d6636cccc2165c1b06a0e7 Mon Sep 17 00:00:00 2001
+From: Philippe Simons <simons.philippe@gmail.com>
+Date: Thu, 31 Oct 2024 20:18:32 +0100
+Subject: [PATCH] fix-kernel-6.12
+
+---
+ .../drivers/gpu/arm/midgard/device/mali_kbase_device.c    | 4 +---
+ .../drivers/gpu/arm/midgard/mali_kbase_core_linux.c       | 8 +++-----
+ .../kernel/drivers/gpu/arm/midgard/mali_kbase_kinstr_jm.c | 1 -
+ 3 files changed, 4 insertions(+), 9 deletions(-)
+
+diff --git a/product/kernel/drivers/gpu/arm/midgard/device/mali_kbase_device.c b/product/kernel/drivers/gpu/arm/midgard/device/mali_kbase_device.c
+index 670b2c2..bd5bd96 100644
+--- a/product/kernel/drivers/gpu/arm/midgard/device/mali_kbase_device.c
++++ b/product/kernel/drivers/gpu/arm/midgard/device/mali_kbase_device.c
+@@ -308,9 +308,7 @@ int kbase_device_misc_init(struct kbase_device *const kbdev)
+ 
+ 	/* There is no limit for Mali, so set to max. */
+ 	if (kbdev->dev->dma_parms)
+-		err = dma_set_max_seg_size(kbdev->dev, UINT_MAX);
+-	if (err)
+-		goto dma_set_mask_failed;
++		dma_set_max_seg_size(kbdev->dev, UINT_MAX);
+ 
+ 	kbdev->nr_hw_address_spaces = (s8)kbdev->gpu_props.num_address_spaces;
+ 
+diff --git a/product/kernel/drivers/gpu/arm/midgard/mali_kbase_core_linux.c b/product/kernel/drivers/gpu/arm/midgard/mali_kbase_core_linux.c
+index cb113ed..9c7a8cc 100644
+--- a/product/kernel/drivers/gpu/arm/midgard/mali_kbase_core_linux.c
++++ b/product/kernel/drivers/gpu/arm/midgard/mali_kbase_core_linux.c
+@@ -726,7 +726,6 @@ static int kbase_open(struct inode *inode, struct file *filp)
+ 	}
+ 
+ 	filp->private_data = kfile;
+-	filp->f_mode |= FMODE_UNSIGNED_OFFSET;
+ 
+ 	return 0;
+ 
+@@ -2188,6 +2187,7 @@ static const struct file_operations kbase_fops = {
+ 	.mmap = kbase_mmap,
+ 	.check_flags = kbase_check_flags,
+ 	.get_unmapped_area = kbase_get_unmapped_area,
++	.fop_flags = FOP_UNSIGNED_OFFSET,
+ };
+ 
+ /**
+@@ -5705,18 +5705,16 @@ void kbase_sysfs_term(struct kbase_device *kbdev)
+ 	put_device(kbdev->dev);
+ }
+ 
+-static int kbase_platform_device_remove(struct platform_device *pdev)
++static void kbase_platform_device_remove(struct platform_device *pdev)
+ {
+ 	struct kbase_device *kbdev = to_kbase_device(&pdev->dev);
+ 
+ 	if (!kbdev)
+-		return -ENODEV;
++		return;
+ 
+ 	kbase_device_term(kbdev);
+ 	dev_set_drvdata(kbdev->dev, NULL);
+ 	kbase_device_free(kbdev);
+-
+-	return 0;
+ }
+ 
+ void kbase_backend_devfreq_term(struct kbase_device *kbdev)
+diff --git a/product/kernel/drivers/gpu/arm/midgard/mali_kbase_kinstr_jm.c b/product/kernel/drivers/gpu/arm/midgard/mali_kbase_kinstr_jm.c
+index 0bf1450..2033ac3 100644
+--- a/product/kernel/drivers/gpu/arm/midgard/mali_kbase_kinstr_jm.c
++++ b/product/kernel/drivers/gpu/arm/midgard/mali_kbase_kinstr_jm.c
+@@ -651,7 +651,6 @@ static __poll_t reader_poll(struct file *const file, struct poll_table_struct *c
+ 
+ /* The file operations virtual function table */
+ static const struct file_operations file_operations = { .owner = THIS_MODULE,
+-							.llseek = no_llseek,
+ 							.read = reader_read,
+ 							.poll = reader_poll,
+ 							.release = reader_release };
+-- 
+2.46.1
+

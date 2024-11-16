@@ -1,0 +1,33 @@
+From 6a4bc179f1d7336b8a7ea98603f6aa2e7e041ba9 Mon Sep 17 00:00:00 2001
+From: Philippe Simons <simons.philippe@gmail.com>
+Date: Tue, 22 Oct 2024 14:21:42 +0200
+Subject: [PATCH] comment MIN MAX macros
+
+---
+ driver/product/kernel/drivers/gpu/arm/midgard/mali_malisw.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/product/kernel/drivers/gpu/arm/midgard/mali_malisw.h b/product/kernel/drivers/gpu/arm/midgard/mali_malisw.h
+index f34ba80..561d0d5 100644
+--- a/product/kernel/drivers/gpu/arm/midgard/mali_malisw.h
++++ b/product/kernel/drivers/gpu/arm/midgard/mali_malisw.h
+@@ -34,7 +34,7 @@
+  * As a macro it may evaluate its arguments more than once.
+  * Refer to MAX macro for more details
+  */
+-#define MIN(x, y) ((x) < (y) ? (x) : (y))
++// #define MIN(x, y) ((x) < (y) ? (x) : (y))
+ 
+ /**
+  * MAX - Return the greater of two values.
+@@ -48,7 +48,7 @@
+  * to retrieve the min and max of two values, consider using a conditional swap
+  * instead.
+  */
+-#define MAX(x, y) ((x) < (y) ? (y) : (x))
++// #define MAX(x, y) ((x) < (y) ? (y) : (x))
+ 
+ /**
+  * CSTD_UNUSED - Function-like macro for suppressing unused variable warnings.
+-- 
+2.46.1

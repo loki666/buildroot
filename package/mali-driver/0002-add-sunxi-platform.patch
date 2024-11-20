@@ -1,19 +1,35 @@
-From 57daaf5e65a3b0d024dc51c4774c7a1cb05d5671 Mon Sep 17 00:00:00 2001
+From bbbe2b890270bf98ddd50a11828ea73fd54e5f85 Mon Sep 17 00:00:00 2001
 From: Philippe Simons <simons.philippe@gmail.com>
 Date: Thu, 14 Nov 2024 08:32:03 +0100
-Subject: [PATCH 2/3] add sunxi platform
+Subject: [PATCH] add sunxi platform
 
 ---
+ .../kernel/drivers/gpu/arm/midgard/Makefile   |   4 +-
  .../gpu/arm/midgard/platform/sunxi/Kbuild     |  23 +
- .../sunxi/mali_kbase_config_platform.h        |  44 ++
- .../platform/sunxi/mali_kbase_config_sunxi.c  | 651 ++++++++++++++++++
- .../gpu/arm/midgard/platform/sunxi/platform.h |  56 ++
- 4 files changed, 774 insertions(+)
+ .../sunxi/mali_kbase_config_platform.h        |  44 +
+ .../platform/sunxi/mali_kbase_config_sunxi.c  | 799 ++++++++++++++++++
+ .../gpu/arm/midgard/platform/sunxi/platform.h |  62 ++
+ 5 files changed, 931 insertions(+), 1 deletion(-)
  create mode 100644 driver/product/kernel/drivers/gpu/arm/midgard/platform/sunxi/Kbuild
  create mode 100644 driver/product/kernel/drivers/gpu/arm/midgard/platform/sunxi/mali_kbase_config_platform.h
  create mode 100644 driver/product/kernel/drivers/gpu/arm/midgard/platform/sunxi/mali_kbase_config_sunxi.c
  create mode 100644 driver/product/kernel/drivers/gpu/arm/midgard/platform/sunxi/platform.h
 
+diff --git a/product/kernel/drivers/gpu/arm/midgard/Makefile b/product/kernel/drivers/gpu/arm/midgard/Makefile
+index f286527..369a6ec 100644
+--- a/product/kernel/drivers/gpu/arm/midgard/Makefile
++++ b/product/kernel/drivers/gpu/arm/midgard/Makefile
+@@ -191,7 +191,9 @@ ifeq ($(MALI_KCONFIG_EXT_PREFIX),)
+         CONFIG_MALI_KUTF_MGM_INTEGRATION_TEST \
+         CONFIG_MALI_XEN \
+         CONFIG_MALI_CORESIGHT \
+-        CONFIG_MALI_TRACE_POWER_GPU_WORK_PERIOD
++        CONFIG_MALI_TRACE_POWER_GPU_WORK_PERIOD \
++        CONFIG_ARCH_SUN50IW9 \
++        CONFIG_ARCH_SUN50IW12
+ 
+ 
+ 
 diff --git a/product/kernel/drivers/gpu/arm/midgard/platform/sunxi/Kbuild b/product/kernel/drivers/gpu/arm/midgard/platform/sunxi/Kbuild
 new file mode 100644
 index 0000000..6f15470
@@ -95,10 +111,10 @@ index 0000000..ef444d9
 +extern struct protected_mode_ops sunxi_protected_ops;
 diff --git a/product/kernel/drivers/gpu/arm/midgard/platform/sunxi/mali_kbase_config_sunxi.c b/product/kernel/drivers/gpu/arm/midgard/platform/sunxi/mali_kbase_config_sunxi.c
 new file mode 100644
-index 0000000..a00501a
+index 0000000..dd10099
 --- /dev/null
 +++ b/product/kernel/drivers/gpu/arm/midgard/platform/sunxi/mali_kbase_config_sunxi.c
-@@ -0,0 +1,651 @@
+@@ -0,0 +1,799 @@
 +/*
 + * Copyright (C) 2019 Allwinner Technology Limited. All rights reserved.
 + *
@@ -127,18 +143,31 @@ index 0000000..a00501a
 +#include <linux/delay.h>
 +
 +#include <linux/pm_opp.h>
++#include <linux/pm_runtime.h>
 +
++#if defined(CONFIG_ARCH_SUN50IW9)
 +#define SMC_REG_BASE 0x3007000
++#elif defined(CONFIG_ARCH_SUN50IW12)
++#define SMC_REG_BASE 0x04800000
++#else
++#error "Need configure SMC for GPU"
++#endif
 +#define SMC_GPU_DRM_REG (SMC_REG_BASE + 0x54)
++
++#if defined(CONFIG_ARCH_SUN50IW9)
 +#define PRCM_REG_BASE 0x07010000
 +#define GPU_POWEROFF_GATING_REG (PRCM_REG_BASE + 0x0254)
++#endif
++
 +#define SUNXI_BAK_CLK_RATE 600000000
 +
 +static struct sunxi_data *sunxi_data;
 +static struct kbase_device *s_kbdev;
 +static struct dentry *sunxi_debugfs;
 +
++#ifdef CONFIG_DEBUG_FS
 +static int sunxi_create_debugfs(void);
++#endif
 +void kbase_pm_get_dvfs_metrics(struct kbase_device *kbdev,
 +			       struct kbasep_pm_metrics *last,
 +			       struct kbasep_pm_metrics *diff);
@@ -146,17 +175,22 @@ index 0000000..a00501a
 +static inline void ioremap_regs(void)
 +{
 +	struct reg *p_drm;
++#if defined(CONFIG_ARCH_SUN50IW9)
 +	struct reg *p_poweroff_gating;
++#endif
 +
 +	p_drm = &sunxi_data->regs.drm;
 +	p_drm->phys = SMC_GPU_DRM_REG;
 +	p_drm->ioaddr = ioremap(p_drm->phys, 4);
 +
++#if defined(CONFIG_ARCH_SUN50IW9)
 +	p_poweroff_gating = &sunxi_data->regs.poweroff_gating;
 +	p_poweroff_gating->phys = GPU_POWEROFF_GATING_REG;
 +	p_poweroff_gating->ioaddr = ioremap(p_poweroff_gating->phys, 4);
++#endif
 +}
 +
++#if defined(CONFIG_ARCH_SUN50IW9)
 +static void power_gating(bool gate)
 +{
 +	u32 val;
@@ -169,11 +203,14 @@ index 0000000..a00501a
 +	writel(val, sunxi_data->regs.poweroff_gating.ioaddr);
 +
 +}
++#endif
 +
 +static inline void iounmap_regs(void)
 +{
 +	iounmap(sunxi_data->regs.drm.ioaddr);
++#if defined(CONFIG_ARCH_SUN50IW9)
 +	iounmap(sunxi_data->regs.poweroff_gating.ioaddr);
++#endif
 +}
 +
 +static void enable_clks_wrap(struct kbase_device *kbdev)
@@ -192,10 +229,11 @@ index 0000000..a00501a
 +
 +int sunxi_chang_freq_safe(struct kbase_device *kbdev, unsigned long *freq, unsigned long u_volt)
 +{
++	int ret = 0;
++#if defined(CONFIG_ARCH_SUN50IW9)
 +	unsigned long s_u_volt = u_volt;
 +	unsigned long c_u_volt = 0;
 +	unsigned long c_u_freq = 0;
-+	int ret = 0;
 +
 +	c_u_freq = sunxi_data->current_freq;
 +	c_u_volt = sunxi_data->current_u_volt;
@@ -264,7 +302,6 @@ index 0000000..a00501a
 +	}
 +
 +ret_safe:
-+
 +#ifdef CONFIG_MALI_DEVFREQ
 +	kbdev->current_voltages[0] = u_volt;
 +#endif
@@ -274,8 +311,65 @@ index 0000000..a00501a
 +	sunxi_data->current_freq = *freq;
 +	sunxi_data->current_u_volt = u_volt;
 +
-+	return ret;
++#elif defined(CONFIG_ARCH_SUN50IW12)
++	if (sunxi_data->current_freq < *freq) {
++		// increase voltage first when up frequency
++		if (sunxi_data->independent_power && u_volt != sunxi_data->current_u_volt) {
++#ifdef CONFIG_REGULATOR
++			ret = regulator_set_voltage(kbdev->regulators[0], u_volt, u_volt);
++			if (ret < 0) {
++				dev_err(kbdev->dev, "set gpu regulators err %d!\n", ret);
++				return ret;
++			}
++#endif
++			sunxi_data->current_u_volt = u_volt;
++#ifdef CONFIG_MALI_DEVFREQ
++			kbdev->current_voltages[0] = u_volt;
++#endif
++		}
++		// then set frequnecy
++		ret = clk_set_rate(kbdev->clocks[0], *freq);
++		if (ret < 0) {
++			dev_err(kbdev->dev, "set pll_gpu to %ld err %d!\n", *freq, ret);
++			return ret;
++		}
++		ret = clk_set_rate(kbdev->clocks[1], *freq);
++		if (ret < 0) {
++			dev_err(kbdev->dev, "set gpu core clock to %ld err %d!\n", *freq, ret);
++			return ret;
++		}
++		sunxi_data->current_freq = *freq;
++	} else {
++		// decrease frequency first when down frequency
++		ret = clk_set_rate(kbdev->clocks[0], *freq);
++		if (ret < 0) {
++			dev_err(kbdev->dev, "set pll_gpu to %ld err %d!\n", *freq, ret);
++			return ret;
++		}
++		ret = clk_set_rate(kbdev->clocks[1], *freq);
++		if (ret < 0) {
++			dev_err(kbdev->dev, "set gpu core clock to %ld err %d!\n", *freq, ret);
++			return ret;
++		}
++		sunxi_data->current_freq = *freq;
++		// decrease voltage
++		if (sunxi_data->independent_power && u_volt != sunxi_data->current_u_volt) {
++#ifdef CONFIG_REGULATOR
++			ret = regulator_set_voltage(kbdev->regulators[0], u_volt, u_volt);
++			if (ret < 0) {
++				dev_err(kbdev->dev, "set gpu regulators err %d!\n", ret);
++				return ret;
++			}
++#endif
++			sunxi_data->current_u_volt = u_volt;
++#ifdef CONFIG_MALI_DEVFREQ
++			kbdev->current_voltages[0] = u_volt;
++#endif
++		}
++	}
++#endif
 +
++	return ret;
 +}
 +
 +#ifdef CONFIG_MALI_DEVFREQ
@@ -393,6 +487,7 @@ index 0000000..a00501a
 +#if defined(CONFIG_PM_OPP)
 +	struct dev_pm_opp *opp;
 +#endif
++
 +	unsigned long freq = SUNXI_BAK_CLK_RATE;
 +	unsigned long u_volt = 950000;
 +
@@ -414,8 +509,12 @@ index 0000000..a00501a
 +#else
 +	sunxi_data->independent_power = 0;
 +#endif
++
++#if defined(CONFIG_ARCH_SUN50IW9)
 +	sunxi_data->bak_freq = SUNXI_BAK_CLK_RATE;
 +	sunxi_data->bak_u_volt = u_volt;
++#endif
++
 +#if !defined(CONFIG_PM_OPP)
 +	clk_set_rate(kbdev->clocks[0], SUNXI_BAK_CLK_RATE);
 +	clk_set_rate(kbdev->clocks[1], SUNXI_BAK_CLK_RATE);
@@ -430,10 +529,12 @@ index 0000000..a00501a
 +		u_volt = dev_pm_opp_get_voltage(opp);
 +	}
 +	rcu_read_unlock();
++#if defined(CONFIG_ARCH_SUN50IW9)
 +	if (SUNXI_BAK_CLK_RATE > freq) {
 +		sunxi_data->bak_freq = SUNXI_BAK_CLK_RATE/2;
 +		sunxi_data->bak_u_volt = u_volt;
 +	}
++#endif
 +#ifdef CONFIG_REGULATOR
 +	if (sunxi_data->independent_power) {
 +		if (regulator_set_voltage(kbdev->regulators[0], u_volt, u_volt) < 0)
@@ -445,16 +546,24 @@ index 0000000..a00501a
 +	clk_set_rate(kbdev->clocks[0], freq);
 +	clk_set_rate(kbdev->clocks[1], freq);
 +#endif
++
 +	sunxi_data->reset = devm_reset_control_get(kbdev->dev, NULL);
 +	if (IS_ERR_OR_NULL(sunxi_data->reset)) {
 +		dev_info(kbdev->dev, "sunxi init gpu Failed to get reset ctrl\n");
 +	}
++
++#if defined(CONFIG_ARCH_SUN50IW9)
 +	sunxi_data->bus_clk = of_clk_get(kbdev->dev->of_node, 3);
++#elif defined(CONFIG_ARCH_SUN50IW12)
++	sunxi_data->bus_clk = of_clk_get(kbdev->dev->of_node, 2);
++#endif
 +	if (!IS_ERR_OR_NULL(sunxi_data->bus_clk)) {
 +		clk_prepare_enable(sunxi_data->bus_clk);
 +	} else {
 +		dev_info(kbdev->dev, "sunxi init gpu Failed to get bus_clk \n");
 +	}
++
++#if defined(CONFIG_ARCH_SUN50IW9)
 +	sunxi_data->bak_clk = of_clk_get(kbdev->dev->of_node, 2);
 +	if (!IS_ERR_OR_NULL(sunxi_data->bak_clk)) {
 +		clk_set_rate(sunxi_data->bak_clk, sunxi_data->bak_freq);
@@ -464,11 +573,24 @@ index 0000000..a00501a
 +		sunxi_data->bak_u_volt = 0;
 +		sunxi_data->bak_freq = 0;
 +	}
++#endif
 +
 +	sunxi_data->max_freq = freq;
 +	sunxi_data->max_u_volt = u_volt;
 +	ioremap_regs();
 +	mutex_init(&sunxi_data->sunxi_lock);
++
++#if defined(CONFIG_ARCH_SUN50IW12)
++	// 1860 need use pm_runtime framework to let
++	// power domain control poweron or poweroff of gpu
++	pm_runtime_enable(kbdev->dev);
++	// When use 1860 power domain, you need enable clk and
++	// deassert gpu reset in gpu initialization flow.
++	// And then power domain will auto control gpu clk and reset,
++	// when poweron or poweroff gpu.
++	enable_clks_wrap(kbdev);
++	reset_control_deassert(sunxi_data->reset);
++#endif
 +
 +#ifdef CONFIG_MALI_DEVFREQ
 +	kbdev->current_nominal_freq = freq;
@@ -478,7 +600,10 @@ index 0000000..a00501a
 +	sunxi_data->current_u_volt = u_volt;
 +
 +	clk_set_parent(kbdev->clocks[1], kbdev->clocks[0]);
++
++#ifdef CONFIG_DEBUG_FS
 +	sunxi_create_debugfs();
++#endif
 +
 +	if (sysfs_create_group(&kbdev->dev->kobj, &scene_ctrl_attribute_group)) {
 +		dev_err(kbdev->dev, "sunxi sysfs group creation failed!\n");
@@ -486,9 +611,15 @@ index 0000000..a00501a
 +
 +	s_kbdev = kbdev;
 +
++#if defined(CONFIG_ARCH_SUN50IW9)
 +	dev_info(kbdev->dev, "[%ldmv-%ldMHz] bak[%ldmv-%ldMHz] inde_power:%d idle:%d dvfs:%d\n",
 +		u_volt/1000, freq/1000/1000, sunxi_data->bak_u_volt/1000, sunxi_data->bak_freq/1000/1000,
 +		sunxi_data->independent_power, sunxi_data->idle_ctrl, sunxi_data->dvfs_ctrl);
++#elif defined(CONFIG_ARCH_SUN50IW12)
++	dev_info(kbdev->dev, "[%ldmv-%ldMHz] inde_power:%d idle:%d dvfs:%d\n",
++		u_volt/1000, freq/1000/1000,
++		sunxi_data->independent_power, sunxi_data->idle_ctrl, sunxi_data->dvfs_ctrl);
++#endif
 +
 +	return 0;
 +}
@@ -498,8 +629,16 @@ index 0000000..a00501a
 +	debugfs_remove_recursive(sunxi_debugfs);
 +	sysfs_remove_group(&kbdev->dev->kobj, &scene_ctrl_attribute_group);
 +
++#if defined(CONFIG_ARCH_SUN50IW12)
++	pm_runtime_disable(kbdev->dev);
++	disable_clks_wrap(kbdev);
++	reset_control_deassert(sunxi_data->reset);
++#endif
++
++#if defined(CONFIG_ARCH_SUN50IW9)
 +	if (!IS_ERR_OR_NULL(sunxi_data->bak_clk))
 +		clk_disable_unprepare(sunxi_data->bak_clk);
++#endif
 +
 +	iounmap_regs();
 +	mutex_destroy(&sunxi_data->sunxi_lock);
@@ -540,8 +679,13 @@ index 0000000..a00501a
 +
 +static int sunxi_pm_callback_power_on(struct kbase_device *kbdev)
 +{
++#if defined(CONFIG_ARCH_SUN50IW12)
++	int error;
++#endif
++
 +	if (sunxi_data->power_on)
 +		goto finish;
++#if defined(CONFIG_ARCH_SUN50IW9)
 +#ifdef CONFIG_REGULATOR
 +	if (sunxi_data->independent_power
 +		&& !regulator_is_enabled(kbdev->regulators[0])) {
@@ -550,20 +694,33 @@ index 0000000..a00501a
 +		}
 +	}
 +#endif
++#elif defined(CONFIG_ARCH_SUN50IW12)
++	error = pm_runtime_get_sync(kbdev->dev);
++	if (error == 1)
++		return 0;
++#else
++#error "Need enable regulator for GPU"
++#endif
 +	sunxi_data->power_on = true;
 +
 +finish:
++#if defined(CONFIG_ARCH_SUN50IW9)
 +	if (sunxi_data->clk_on)
 +		return 1;
++
 +	power_gating(false);
 +	reset_control_deassert(sunxi_data->reset);
++
 +	enable_clks_wrap(kbdev);
 +	sunxi_data->clk_on = true;
++#endif
++
 +	return 1;
 +}
 +
 +static void sunxi_pm_callback_power_off(struct kbase_device *kbdev)
 +{
++#if defined(CONFIG_ARCH_SUN50IW9)
 +	if (sunxi_data->clk_on) {
 +		disable_clks_wrap(kbdev);
 +		reset_control_assert(sunxi_data->reset);
@@ -575,9 +732,11 @@ index 0000000..a00501a
 +	if (!sunxi_data->idle_ctrl)
 +		return;
 +powerdown:
++#endif
 +	if (!sunxi_data->power_on)
 +		return;
 +	sunxi_data->power_on = false;
++#if defined(CONFIG_ARCH_SUN50IW9)
 +#ifdef CONFIG_REGULATOR
 +	if (sunxi_data->independent_power) {
 +		if (regulator_disable(kbdev->regulators[0])) {
@@ -585,7 +744,12 @@ index 0000000..a00501a
 +		}
 +	}
 +#endif
-+
++#elif defined(CONFIG_ARCH_SUN50IW12)
++	pm_runtime_mark_last_busy(kbdev->dev);
++	pm_runtime_put_autosuspend(kbdev->dev);
++#else
++#error "Need enable regulator for GPU"
++#endif
 +}
 +
 +struct kbase_pm_callback_conf sunxi_pm_callbacks = {
@@ -752,10 +916,10 @@ index 0000000..a00501a
 +#endif /* CONFIG_DEBUG_FS */
 diff --git a/product/kernel/drivers/gpu/arm/midgard/platform/sunxi/platform.h b/product/kernel/drivers/gpu/arm/midgard/platform/sunxi/platform.h
 new file mode 100644
-index 0000000..65ea31c
+index 0000000..7106e4d
 --- /dev/null
 +++ b/product/kernel/drivers/gpu/arm/midgard/platform/sunxi/platform.h
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,62 @@
 +/*
 + * Copyright (C) 2019 Allwinner Technology Limited. All rights reserved.
 + *
@@ -786,12 +950,16 @@ index 0000000..65ea31c
 +
 +struct sunxi_regs {
 +	struct reg drm;
++#if defined(CONFIG_ARCH_SUN50IW9)
 +	struct reg poweroff_gating;
++#endif
 +};
 +
 +struct sunxi_data {
 +	struct sunxi_regs regs;
++#if defined(CONFIG_ARCH_SUN50IW9)
 +	struct clk *bak_clk;
++#endif
 +	struct clk *bus_clk;
 +	struct reset_control *reset;
 +	bool man_ctrl;
@@ -804,8 +972,10 @@ index 0000000..65ea31c
 +	bool clk_on;
 +	unsigned long max_freq;
 +	unsigned long max_u_volt;
++#if defined(CONFIG_ARCH_SUN50IW9)
 +	unsigned long bak_freq;
 +	unsigned long bak_u_volt;
++#endif
 +	unsigned long current_freq;
 +	unsigned long current_u_volt;
 +	struct kbasep_pm_metrics sunxi_last;

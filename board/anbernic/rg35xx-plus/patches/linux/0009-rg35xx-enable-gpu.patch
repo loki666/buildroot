@@ -11,7 +11,7 @@ diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-2024.dts 
 index 99974e28c..37f852f4d 100644
 --- a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-2024.dts
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-2024.dts
-@@ -224,12 +224,61 @@ panel_in_rgb: endpoint {
+@@ -224,12 +224,62 @@ panel_in_rgb: endpoint {
  			};
  		};
  	};
@@ -57,6 +57,7 @@ index 99974e28c..37f852f4d 100644
 +	dvfs_status = <1>;
 +	operating-points = <0x9e340 0xea600 0x927c0 0xdbba0 0x86c40 0xdbba0 0x7b0c0 0xdbba0 0x6f540 0xdbba0 0x668a0 0xdbba0>;
 +   #cooling-cells = <2>;
++	power_policy = "always_on";
 +	status = "okay";
 +
 +	ipa_dvfs {

@@ -1,0 +1,48 @@
+From 0666b59913a978eb93a1e0976141a69d48f9466f Mon Sep 17 00:00:00 2001
+From: Philippe Simons <simons.philippe@gmail.com>
+Date: Sun, 5 Jan 2025 15:11:47 +0100
+Subject: [PATCH] add forcefeedback
+
+---
+ .../sun50i-h700-anbernic-rg35xx-2024.dts       | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-2024.dts b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-2024.dts
+index 1c2637d21..550a02053 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-2024.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-2024.dts
+@@ -47,6 +47,19 @@ chosen {
+ 		stdout-path = "serial0:115200n8";
+ 	};
+ 
++	vibrator {
++		compatible = "pwm-vibrator";
++
++		pwms = <&pwm 2 500000 0>;
++		pwm-names = "enable";
++
++		/* vcc-supply = <&reg_cldo3>; */
++		/* enable-gpios = <&pio 7 2 GPIO_ACTIVE_HIGH>; */
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&rumble_pin>;
++	};
++
+ 	joypad: rocknix-singleadc-joypad {
+ 		compatible = "rocknix-singleadc-joypad";
+ 		hw_info = <0x01>;
+@@ -397,6 +410,11 @@ lcd_backlight_pin: pwm0-pin {
+ 		function = "pwm0";
+ 	};
+ 
++	rumble_pin: pwm2-pin {
++		pins = "PH2";
++		function = "pwm2";
++	};
++
+ 	joy_mux_pin: joy-mux-pin {
+ 		pins = "PI0";
+ 		function = "gpio_out";
+-- 
+2.47.1
+

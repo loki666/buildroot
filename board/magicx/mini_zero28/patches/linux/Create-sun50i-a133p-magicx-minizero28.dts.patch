@@ -1,0 +1,217 @@
+From a9c3484cfc8ece08f4ab1a09b27e50a5234991fb Mon Sep 17 00:00:00 2001
+From: Philippe Simons <simons.philippe@gmail.com>
+Date: Fri, 14 Feb 2025 19:36:08 +0100
+Subject: [PATCH] Create sun50i-a133p-magicx-minizero28.dts
+
+---
+ .../sun50i-a133p-magicx-minizero28.dts        | 198 ++++++++++++++++++
+ 1 file changed, 198 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/allwinner/sun50i-a133p-magicx-minizero28.dts
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a133p-magicx-minizero28.dts b/arch/arm64/boot/dts/allwinner/sun50i-a133p-magicx-minizero28.dts
+new file mode 100644
+index 000000000..a87208577
+--- /dev/null
++++ b/arch/arm64/boot/dts/allwinner/sun50i-a133p-magicx-minizero28.dts
+@@ -0,0 +1,198 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Copyright (c) 2025 Arm Ltd.
++ */
++
++/dts-v1/;
++
++#include "sun50i-a100.dtsi"
++#include "sun50i-a100-cpu-opp.dtsi"
++
++#include <dt-bindings/gpio/gpio.h>
++
++/ {
++	model = "MagicX Mini Zero 28";
++	compatible = "magicx,mini-zero-28", "allwinner,sun50i-a100";
++
++	aliases {
++		serial0 = &uart0;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	reg_vcc5v: regulator-vcc5v { /* USB-C power input */
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-5v";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++	};
++};
++
++&cpu0 {
++	cpu-supply = <&vdd_cpu>;
++};
++
++&mmc0 {
++	vmmc-supply = <&reg_aldo3>;
++	cd-gpios = <&pio 5 6 GPIO_ACTIVE_LOW>; /* PF6 */
++	bus-width = <4>;
++   disable-wp;
++	status = "okay";
++};
++
++&pio {
++	vcc-pa-supply = <&reg_cldo3>;
++	vcc-pc-supply = <&reg_cldo3>;
++	vcc-pe-supply = <&reg_cldo3>;
++	vcc-pf-supply = <&reg_cldo3>;
++	vcc-pg-supply = <&reg_aldo4>;
++	vcc-ph-supply = <&reg_cldo3>;
++	vcc-pi-supply = <&reg_cldo3>;
++};
++
++&r_i2c0 {
++	status = "okay";
++
++	vdd_cpu: regulator@41 {
++		compatible = "silergy,syr827";
++		reg = <0x41>;
++		fcs,suspend-voltage-selector = <1>;
++
++		regulator-name = "vdd_cpu";
++		vin-supply = <&reg_vcc5v>;
++
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <712500>;
++		regulator-max-microvolt = <1500000>;
++		regulator-ramp-delay = <520>;
++		regulator-enable-ramp-delay = <1000>;
++
++		regulator-state-mem {
++			regulator-off-in-suspend;
++		};
++	};
++
++	axp717: pmic@34 {
++		compatible = "x-powers,axp717";
++		reg = <0x34>;
++		interrupt-controller;
++		#interrupt-cells = <1>;
++		interrupt-parent = <&r_intc>;
++		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
++
++		vin1-supply = <&reg_vcc5v>;
++		vin2-supply = <&reg_vcc5v>;
++		vin3-supply = <&reg_vcc5v>;
++		vin4-supply = <&reg_vcc5v>;
++
++		regulators {
++			reg_dcdc1: dcdc1 {
++				regulator-always-on;
++				regulator-min-microvolt = <940000>;
++				regulator-max-microvolt = <940000>;
++			};
++
++			reg_dcdc2: dcdc2 {
++				regulator-always-on;
++				/* unused */
++			};
++
++			reg_dcdc3: dcdc3 {
++				regulator-always-on;
++				regulator-min-microvolt = <1200000>;
++				regulator-max-microvolt = <1200000>;
++			};
++
++			reg_aldo1: aldo1 {
++				regulator-always-on;
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <1800000>;
++			};
++
++			reg_aldo2: aldo2 {
++				regulator-always-on;
++				regulator-min-microvolt = <3300000>;
++				regulator-max-microvolt = <3300000>;
++			};
++
++			reg_aldo3: aldo3 {
++				regulator-always-on;
++				regulator-min-microvolt = <3300000>;
++				regulator-max-microvolt = <3300000>;
++			};
++
++			reg_aldo4: aldo4 {
++				regulator-always-on;
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <1800000>;
++			};
++
++			reg_bldo1: bldo1 {
++				regulator-always-on;
++				/* unused */
++			};
++
++			reg_bldo2: bldo2 {
++				regulator-always-on;
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <1800000>;
++			};
++
++			reg_bldo3: bldo3 {
++				regulator-always-on;
++				regulator-min-microvolt = <3300000>;
++				regulator-max-microvolt = <3300000>;
++			};
++
++			reg_bldo4: bldo4 {
++				regulator-always-on;
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <1800000>;
++			};
++
++			reg_cldo1: cldo1 {
++				regulator-always-on;
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <1800000>;
++			};
++
++			reg_cldo2: cldo2 {
++				regulator-always-on;
++				/* unused */
++			};
++
++			reg_cldo3: cldo3 {
++				regulator-always-on;
++				regulator-min-microvolt = <3300000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-name = "vcc-io";
++			};
++
++			reg_cldo4: cldo4 {
++				regulator-always-on;
++				regulator-min-microvolt = <3300000>;
++				regulator-max-microvolt = <3300000>;
++			};
++
++			reg_boost: boost {
++				regulator-always-on;
++				/* unused */
++			};
++
++			reg_cpusldo: cpusldo {
++				regulator-always-on;
++				regulator-min-microvolt = <900000>;
++				regulator-max-microvolt = <900000>;
++			};
++		};
++	};
++};
++
++&uart0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart0_pb_pins>;
++	status = "okay";
++};
+-- 
+2.48.1
+

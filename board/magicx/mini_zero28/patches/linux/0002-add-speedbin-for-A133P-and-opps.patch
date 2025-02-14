@@ -1,0 +1,108 @@
+From 4ac1c090927a543be86420a5edda620d4393f92d Mon Sep 17 00:00:00 2001
+From: Philippe Simons <simons.philippe@gmail.com>
+Date: Sun, 16 Feb 2025 00:37:10 +0100
+Subject: [PATCH 2/4] add speedbin for A133P and opps
+
+---
+ .../dts/allwinner/sun50i-a100-cpu-opp.dtsi    | 29 +++++++++++++++++++
+ drivers/cpufreq/sun50i-cpufreq-nvmem.c        |  2 ++
+ 2 files changed, 31 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a100-cpu-opp.dtsi b/arch/arm64/boot/dts/allwinner/sun50i-a100-cpu-opp.dtsi
+index c6a2efa03..d23bc253c 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-a100-cpu-opp.dtsi
++++ b/arch/arm64/boot/dts/allwinner/sun50i-a100-cpu-opp.dtsi
+@@ -15,6 +15,8 @@ opp-408000000 {
+ 			opp-microvolt-speed0 = <900000>;
+ 			opp-microvolt-speed1 = <900000>;
+ 			opp-microvolt-speed2 = <900000>;
++			opp-microvolt-speed3 = <900000 900000 1200000>;
++			opp-supported-hw = <0xf>;
+ 		};
+ 
+ 		opp-600000000 {
+@@ -24,6 +26,8 @@ opp-600000000 {
+ 			opp-microvolt-speed0 = <900000>;
+ 			opp-microvolt-speed1 = <900000>;
+ 			opp-microvolt-speed2 = <900000>;
++			opp-microvolt-speed3 = <900000 900000 1200000>;
++			opp-supported-hw = <0xf>;
+ 		};
+ 
+ 		opp-816000000 {
+@@ -33,6 +37,8 @@ opp-816000000 {
+ 			opp-microvolt-speed0 = <940000>;
+ 			opp-microvolt-speed1 = <900000>;
+ 			opp-microvolt-speed2 = <900000>;
++			opp-microvolt-speed3 = <900000 900000 1200000>;
++			opp-supported-hw = <0xf>;
+ 		};
+ 
+ 		opp-1080000000 {
+@@ -42,6 +48,8 @@ opp-1080000000 {
+ 			opp-microvolt-speed0 = <1020000>;
+ 			opp-microvolt-speed1 = <980000>;
+ 			opp-microvolt-speed2 = <950000>;
++			opp-microvolt-speed3 = <900000 900000 1200000>;
++			opp-supported-hw = <0xf>;
+ 		};
+ 
+ 		opp-1200000000 {
+@@ -51,6 +59,8 @@ opp-1200000000 {
+ 			opp-microvolt-speed0 = <1100000>;
+ 			opp-microvolt-speed1 = <1020000>;
+ 			opp-microvolt-speed2 = <1000000>;
++			opp-microvolt-speed3 = <937500 937500 1200000>;
++			opp-supported-hw = <0xf>;
+ 		};
+ 
+ 		opp-1320000000 {
+@@ -60,6 +70,7 @@ opp-1320000000 {
+ 			opp-microvolt-speed0 = <1160000>;
+ 			opp-microvolt-speed1 = <1060000>;
+ 			opp-microvolt-speed2 = <1030000>;
++			opp-supported-hw = <0x7>;
+ 		};
+ 
+ 		opp-1464000000 {
+@@ -69,6 +80,24 @@ opp-1464000000 {
+ 			opp-microvolt-speed0 = <1180000>;
+ 			opp-microvolt-speed1 = <1180000>;
+ 			opp-microvolt-speed2 = <1130000>;
++			opp-microvolt-speed3 = <1020000 1020000 1200000>;
++			opp-supported-hw = <0xf>;
++		};
++
++		opp-1600000000 {
++			clock-latency-ns = <244144>; /* 8 32k periods */
++			opp-hz = /bits/ 64 <1600000000>;
++
++			opp-microvolt-speed3 = <1100000 1100000 1200000>;
++			opp-supported-hw = <0x8>;
++		};
++
++		opp-1800000000 {
++			clock-latency-ns = <244144>; /* 8 32k periods */
++			opp-hz = /bits/ 64 <1800000000>;
++
++			opp-microvolt-speed3 = <1180000 1180000 1200000>;
++			opp-supported-hw = <0x8>;
+ 		};
+ 	};
+ };
+diff --git a/drivers/cpufreq/sun50i-cpufreq-nvmem.c b/drivers/cpufreq/sun50i-cpufreq-nvmem.c
+index 17d6a149f..52aa1e12e 100644
+--- a/drivers/cpufreq/sun50i-cpufreq-nvmem.c
++++ b/drivers/cpufreq/sun50i-cpufreq-nvmem.c
+@@ -56,6 +56,8 @@ static u32 sun50i_a100_efuse_xlate(u32 speedbin)
+ 		      SUN50I_A100_NVMEM_MASK;
+ 
+ 	switch (efuse_value) {
++	case 0b001:
++		return 3;
+ 	case 0b100:
+ 		return 2;
+ 	case 0b010:
+-- 
+2.48.1
+

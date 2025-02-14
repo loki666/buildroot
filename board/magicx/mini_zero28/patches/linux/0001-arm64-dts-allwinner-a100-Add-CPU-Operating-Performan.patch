@@ -1,0 +1,188 @@
+From 9e2b3c45339f3881b7c1dd4b79c3cc3dd77abf7c Mon Sep 17 00:00:00 2001
+From: Shuosheng Huang <huangshuosheng@allwinnertech.com>
+Date: Thu, 31 Oct 2024 04:02:26 -0300
+Subject: [PATCH 1/4] arm64: dts: allwinner: a100: Add CPU Operating
+ Performance Points table
+
+Add an Operating Performance Points table for the CPU cores to
+enable Dynamic Voltage & Frequency Scaling on the A100.
+
+Signed-off-by: Shuosheng Huang <huangshuosheng@allwinnertech.com>
+[masterr3c0rd@epochal.quest: fix typos in -cpu-opp, use compatible]
+Signed-off-by: Cody Eksal <masterr3c0rd@epochal.quest>
+---
+ .../allwinner/sun50i-a100-allwinner-perf1.dts |  5 ++
+ .../dts/allwinner/sun50i-a100-cpu-opp.dtsi    | 90 +++++++++++++++++++
+ .../arm64/boot/dts/allwinner/sun50i-a100.dtsi |  8 ++
+ 3 files changed, 103 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/allwinner/sun50i-a100-cpu-opp.dtsi
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a100-allwinner-perf1.dts b/arch/arm64/boot/dts/allwinner/sun50i-a100-allwinner-perf1.dts
+index a387bccdc..a7e3be015 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-a100-allwinner-perf1.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-a100-allwinner-perf1.dts
+@@ -6,6 +6,7 @@
+ /dts-v1/;
+ 
+ #include "sun50i-a100.dtsi"
++#include "sun50i-a100-cpu-opp.dtsi"
+ 
+ #include <dt-bindings/gpio/gpio.h>
+ 
+@@ -38,6 +39,10 @@ &mmc2 {
+ 	status = "okay";
+ };
+ 
++&cpu0 {
++	cpu-supply = <&reg_dcdc2>;
++};
++
+ &pio {
+ 	vcc-pb-supply = <&reg_dcdc1>;
+ 	vcc-pc-supply = <&reg_eldo1>;
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a100-cpu-opp.dtsi b/arch/arm64/boot/dts/allwinner/sun50i-a100-cpu-opp.dtsi
+new file mode 100644
+index 000000000..c6a2efa03
+--- /dev/null
++++ b/arch/arm64/boot/dts/allwinner/sun50i-a100-cpu-opp.dtsi
+@@ -0,0 +1,90 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++// Copyright (c) 2020 Yangtao Li <frank@allwinnertech.com>
++// Copyright (c) 2020 ShuoSheng Huang <huangshuosheng@allwinnertech.com>
++
++/ {
++	cpu_opp_table: opp-table-cpu {
++		compatible = "allwinner,sun50i-a100-operating-points";
++		nvmem-cells = <&cpu_speed_grade>;
++		opp-shared;
++
++		opp-408000000 {
++			clock-latency-ns = <244144>; /* 8 32k periods */
++			opp-hz = /bits/ 64 <408000000>;
++
++			opp-microvolt-speed0 = <900000>;
++			opp-microvolt-speed1 = <900000>;
++			opp-microvolt-speed2 = <900000>;
++		};
++
++		opp-600000000 {
++			clock-latency-ns = <244144>; /* 8 32k periods */
++			opp-hz = /bits/ 64 <600000000>;
++
++			opp-microvolt-speed0 = <900000>;
++			opp-microvolt-speed1 = <900000>;
++			opp-microvolt-speed2 = <900000>;
++		};
++
++		opp-816000000 {
++			clock-latency-ns = <244144>; /* 8 32k periods */
++			opp-hz = /bits/ 64 <816000000>;
++
++			opp-microvolt-speed0 = <940000>;
++			opp-microvolt-speed1 = <900000>;
++			opp-microvolt-speed2 = <900000>;
++		};
++
++		opp-1080000000 {
++			clock-latency-ns = <244144>; /* 8 32k periods */
++			opp-hz = /bits/ 64 <1080000000>;
++
++			opp-microvolt-speed0 = <1020000>;
++			opp-microvolt-speed1 = <980000>;
++			opp-microvolt-speed2 = <950000>;
++		};
++
++		opp-1200000000 {
++			clock-latency-ns = <244144>; /* 8 32k periods */
++			opp-hz = /bits/ 64 <1200000000>;
++
++			opp-microvolt-speed0 = <1100000>;
++			opp-microvolt-speed1 = <1020000>;
++			opp-microvolt-speed2 = <1000000>;
++		};
++
++		opp-1320000000 {
++			clock-latency-ns = <244144>; /* 8 32k periods */
++			opp-hz = /bits/ 64 <1320000000>;
++
++			opp-microvolt-speed0 = <1160000>;
++			opp-microvolt-speed1 = <1060000>;
++			opp-microvolt-speed2 = <1030000>;
++		};
++
++		opp-1464000000 {
++			clock-latency-ns = <244144>; /* 8 32k periods */
++			opp-hz = /bits/ 64 <1464000000>;
++
++			opp-microvolt-speed0 = <1180000>;
++			opp-microvolt-speed1 = <1180000>;
++			opp-microvolt-speed2 = <1130000>;
++		};
++	};
++};
++
++&cpu0 {
++	operating-points-v2 = <&cpu_opp_table>;
++};
++
++&cpu1 {
++	operating-points-v2 = <&cpu_opp_table>;
++};
++
++&cpu2 {
++	operating-points-v2 = <&cpu_opp_table>;
++};
++
++&cpu3 {
++	operating-points-v2 = <&cpu_opp_table>;
++};
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a100.dtsi b/arch/arm64/boot/dts/allwinner/sun50i-a100.dtsi
+index a24adba20..f9f6fea03 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-a100.dtsi
++++ b/arch/arm64/boot/dts/allwinner/sun50i-a100.dtsi
+@@ -23,6 +23,7 @@ cpu0: cpu@0 {
+ 			device_type = "cpu";
+ 			reg = <0x0>;
+ 			enable-method = "psci";
++			clocks = <&ccu CLK_CPUX>;
+ 		};
+ 
+ 		cpu1: cpu@1 {
+@@ -30,6 +31,7 @@ cpu1: cpu@1 {
+ 			device_type = "cpu";
+ 			reg = <0x1>;
+ 			enable-method = "psci";
++			clocks = <&ccu CLK_CPUX>;
+ 		};
+ 
+ 		cpu2: cpu@2 {
+@@ -37,6 +39,7 @@ cpu2: cpu@2 {
+ 			device_type = "cpu";
+ 			reg = <0x2>;
+ 			enable-method = "psci";
++			clocks = <&ccu CLK_CPUX>;
+ 		};
+ 
+ 		cpu3: cpu@3 {
+@@ -44,6 +47,7 @@ cpu3: cpu@3 {
+ 			device_type = "cpu";
+ 			reg = <0x3>;
+ 			enable-method = "psci";
++			clocks = <&ccu CLK_CPUX>;
+ 		};
+ 	};
+ 
+@@ -175,6 +179,10 @@ efuse@3006000 {
+ 			ths_calibration: calib@14 {
+ 				reg = <0x14 8>;
+ 			};
++
++			cpu_speed_grade: cpu-speed-grade@1c {
++				reg = <0x1c 0x2>;
++			};
+ 		};
+ 
+ 		watchdog@30090a0 {
+-- 
+2.48.1
+

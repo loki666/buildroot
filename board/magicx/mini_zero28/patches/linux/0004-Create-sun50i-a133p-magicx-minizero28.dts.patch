@@ -1,19 +1,19 @@
-From ba52499b87282386b67b868728ea20c1cfb0d06e Mon Sep 17 00:00:00 2001
+From 556f24a518ec6ce4fe6603a6573013f766a3a072 Mon Sep 17 00:00:00 2001
 From: Philippe Simons <simons.philippe@gmail.com>
 Date: Sun, 16 Feb 2025 21:18:41 +0100
 Subject: [PATCH 4/4] Create sun50i-a133p-magicx-minizero28.dts
 
 ---
- .../sun50i-a133p-magicx-minizero28.dts        | 233 ++++++++++++++++++
- 1 file changed, 233 insertions(+)
+ .../sun50i-a133p-magicx-minizero28.dts        | 230 ++++++++++++++++++
+ 1 file changed, 230 insertions(+)
  create mode 100644 arch/arm64/boot/dts/allwinner/sun50i-a133p-magicx-minizero28.dts
 
 diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a133p-magicx-minizero28.dts b/arch/arm64/boot/dts/allwinner/sun50i-a133p-magicx-minizero28.dts
 new file mode 100644
-index 000000000..657c8be35
+index 000000000..803c47908
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a133p-magicx-minizero28.dts
-@@ -0,0 +1,233 @@
+@@ -0,0 +1,230 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (c) 2025 Arm Ltd.
@@ -68,15 +68,12 @@ index 000000000..657c8be35
 +
 +&mmc1 {
 +	vmmc-supply = <&reg_bldo1>;
-+	vqmmc-supply = <&reg_aldo4>;
 +	mmc-pwrseq = <&wifi_pwrseq>;
 +	bus-width = <4>;
 +	non-removable;
 +	no-mmc;
 +	no-sd;
 +	cap-sdio-irq;
-+	ignore-pm-notify;
-+	ctl-spec-caps = <0x08>;
 +	max-frequency = <50000000>;
 +	min-frequency = <400000>;
 +	status = "okay";

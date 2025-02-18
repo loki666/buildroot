@@ -1,0 +1,23 @@
+From fb77d4b9316805f64893771b520e009215a10bc3 Mon Sep 17 00:00:00 2001
+From: amazingfate <liujianfeng1994@gmail.com>
+Date: Sun, 16 Feb 2025 16:36:13 +0800
+Subject: [PATCH] fix build for kernel 6.14
+
+---
+ os_dep/linux/ioctl_cfg80211.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/os_dep/linux/ioctl_cfg80211.c b/os_dep/linux/ioctl_cfg80211.c
+index 6c6aec5..d9babf1 100644
+--- a/os_dep/linux/ioctl_cfg80211.c
++++ b/os_dep/linux/ioctl_cfg80211.c
+@@ -4222,6 +4222,9 @@ static int cfg80211_rtw_set_txpower(struct wiphy *wiphy,
+ static int cfg80211_rtw_get_txpower(struct wiphy *wiphy,
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
+ 	struct wireless_dev *wdev,
++#endif
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 14, 0))
++	unsigned int link_id,
+ #endif
+ 	int *dbm)
+ {

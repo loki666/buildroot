@@ -1,7 +1,7 @@
-From fbd337af5089d5f09a561adac1318875382ba8fe Mon Sep 17 00:00:00 2001
+From 027ab62c40500c75143824c08e181df2321a16d6 Mon Sep 17 00:00:00 2001
 From: Philippe Simons <simons.philippe@gmail.com>
 Date: Sun, 16 Feb 2025 10:18:23 +0100
-Subject: [PATCH 4/4] a100: add thermal zone trip points
+Subject: [PATCH 3/4] a100: add thermal zone trip points
 
 ---
  .../arm64/boot/dts/allwinner/sun50i-a100.dtsi | 52 +++++++++++++++++--

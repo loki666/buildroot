@@ -1,19 +1,19 @@
-From a9c3484cfc8ece08f4ab1a09b27e50a5234991fb Mon Sep 17 00:00:00 2001
+From ba52499b87282386b67b868728ea20c1cfb0d06e Mon Sep 17 00:00:00 2001
 From: Philippe Simons <simons.philippe@gmail.com>
-Date: Fri, 14 Feb 2025 19:36:08 +0100
-Subject: [PATCH] Create sun50i-a133p-magicx-minizero28.dts
+Date: Sun, 16 Feb 2025 21:18:41 +0100
+Subject: [PATCH 4/4] Create sun50i-a133p-magicx-minizero28.dts
 
 ---
- .../sun50i-a133p-magicx-minizero28.dts        | 198 ++++++++++++++++++
- 1 file changed, 198 insertions(+)
+ .../sun50i-a133p-magicx-minizero28.dts        | 233 ++++++++++++++++++
+ 1 file changed, 233 insertions(+)
  create mode 100644 arch/arm64/boot/dts/allwinner/sun50i-a133p-magicx-minizero28.dts
 
 diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a133p-magicx-minizero28.dts b/arch/arm64/boot/dts/allwinner/sun50i-a133p-magicx-minizero28.dts
 new file mode 100644
-index 000000000..a87208577
+index 000000000..657c8be35
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a133p-magicx-minizero28.dts
-@@ -0,0 +1,198 @@
+@@ -0,0 +1,233 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (c) 2025 Arm Ltd.
@@ -38,6 +38,14 @@ index 000000000..a87208577
 +		stdout-path = "serial0:115200n8";
 +	};
 +
++	wifi_pwrseq: pwrseq {
++		compatible = "mmc-pwrseq-simple";
++		clocks = <&osc32k>;
++		clock-names = "ext_clock";
++		reset-gpios = <&r_pio 0 5 GPIO_ACTIVE_LOW>, /* PL5 */
++					<&r_pio 0 7 GPIO_ACTIVE_LOW>; /* PL7 */
++	};
++
 +	reg_vcc5v: regulator-vcc5v { /* USB-C power input */
 +		compatible = "regulator-fixed";
 +		regulator-name = "vcc-5v";
@@ -54,12 +62,36 @@ index 000000000..a87208577
 +	vmmc-supply = <&reg_aldo3>;
 +	cd-gpios = <&pio 5 6 GPIO_ACTIVE_LOW>; /* PF6 */
 +	bus-width = <4>;
-+   disable-wp;
++	disable-wp;
 +	status = "okay";
++};
++
++&mmc1 {
++	vmmc-supply = <&reg_bldo1>;
++	vqmmc-supply = <&reg_aldo4>;
++	mmc-pwrseq = <&wifi_pwrseq>;
++	bus-width = <4>;
++	non-removable;
++	no-mmc;
++	no-sd;
++	cap-sdio-irq;
++	ignore-pm-notify;
++	ctl-spec-caps = <0x08>;
++	max-frequency = <50000000>;
++	min-frequency = <400000>;
++	status = "okay";
++
++	sdio_wifi: wifi@1 {
++		reg = <1>;
++		interrupt-parent = <&r_pio>;
++		interrupts = <0 6 IRQ_TYPE_LEVEL_HIGH>; /* PL6 */
++		interrupt-names = "host-wake";
++	};
 +};
 +
 +&pio {
 +	vcc-pa-supply = <&reg_cldo3>;
++	vcc-pb-supply = <&reg_cldo3>;
 +	vcc-pc-supply = <&reg_cldo3>;
 +	vcc-pe-supply = <&reg_cldo3>;
 +	vcc-pf-supply = <&reg_cldo3>;
@@ -106,14 +138,14 @@ index 000000000..a87208577
 +
 +		regulators {
 +			reg_dcdc1: dcdc1 {
-+				regulator-always-on;
 +				regulator-min-microvolt = <940000>;
 +				regulator-max-microvolt = <940000>;
 +			};
 +
 +			reg_dcdc2: dcdc2 {
 +				regulator-always-on;
-+				/* unused */
++				regulator-min-microvolt = <900000>;
++				regulator-max-microvolt = <900000>;
 +			};
 +
 +			reg_dcdc3: dcdc3 {
@@ -122,8 +154,11 @@ index 000000000..a87208577
 +				regulator-max-microvolt = <1200000>;
 +			};
 +
++			reg_dcdc4: dcdc4 {
++				/* unused */
++			};
++
 +			reg_aldo1: aldo1 {
-+				regulator-always-on;
 +				regulator-min-microvolt = <1800000>;
 +				regulator-max-microvolt = <1800000>;
 +			};
@@ -148,7 +183,8 @@ index 000000000..a87208577
 +
 +			reg_bldo1: bldo1 {
 +				regulator-always-on;
-+				/* unused */
++				regulator-min-microvolt = <3300000>;
++				regulator-max-microvolt = <3300000>;
 +			};
 +
 +			reg_bldo2: bldo2 {
@@ -164,7 +200,6 @@ index 000000000..a87208577
 +			};
 +
 +			reg_bldo4: bldo4 {
-+				regulator-always-on;
 +				regulator-min-microvolt = <1800000>;
 +				regulator-max-microvolt = <1800000>;
 +			};

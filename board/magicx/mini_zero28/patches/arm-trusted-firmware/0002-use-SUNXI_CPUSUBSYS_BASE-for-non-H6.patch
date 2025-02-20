@@ -1,0 +1,44 @@
+From 4a5b41ef47e1e85a918ed6874007bb5c51e26738 Mon Sep 17 00:00:00 2001
+From: Philippe Simons <simons.philippe@gmail.com>
+Date: Tue, 18 Feb 2025 21:20:02 +0100
+Subject: [PATCH 2/3] use SUNXI_CPUSUBSYS_BASE for non H6
+
+---
+ plat/allwinner/sun50i_h6/include/sunxi_cpucfg.h | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/plat/allwinner/sun50i_h6/include/sunxi_cpucfg.h b/plat/allwinner/sun50i_h6/include/sunxi_cpucfg.h
+index e78213d93..0c2f7080c 100644
+--- a/plat/allwinner/sun50i_h6/include/sunxi_cpucfg.h
++++ b/plat/allwinner/sun50i_h6/include/sunxi_cpucfg.h
+@@ -1,4 +1,6 @@
+ #include <sunxi_cpucfg_ncat.h>
++#include <sunxi_def.h>
++#include <sunxi_private.h>
+ 
+ static inline bool sunxi_cpucfg_has_per_cluster_regs(void)
+ {
+@@ -7,9 +9,17 @@ static inline bool sunxi_cpucfg_has_per_cluster_regs(void)
+ 
+ static inline uintptr_t sunxi_get_rvbar_address(int corenr, bool hi_bits)
+ {
+-	if (hi_bits) {
+-		return (SUNXI_CPUCFG_BASE + 0x0044 + (corenr) * 8);
++	if (sunxi_read_soc_id() == SUNXI_SOC_H6) {
++		if (hi_bits) {
++			return (SUNXI_CPUCFG_BASE + 0x0044 + (corenr) * 8);
++		} else {
++			return (SUNXI_CPUCFG_BASE + 0x0040 + (corenr) * 8);
++		}	
+ 	} else {
+-		return (SUNXI_CPUCFG_BASE + 0x0040 + (corenr) * 8);
++		if (hi_bits) {
++			return (SUNXI_CPUSUBSYS_BASE + 0x44 + (corenr) * 8);
++		} else {
++			return (SUNXI_CPUSUBSYS_BASE + 0x40 + (corenr) * 8);
++		}	
+ 	}
+ }
+-- 
+2.48.1
+

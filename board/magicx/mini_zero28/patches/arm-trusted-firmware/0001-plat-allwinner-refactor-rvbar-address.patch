@@ -1,0 +1,168 @@
+From 17957a32f5e567a064d5cb20fc198b3e84c4724b Mon Sep 17 00:00:00 2001
+From: Philippe Simons <simons.philippe@gmail.com>
+Date: Tue, 18 Feb 2025 20:42:22 +0100
+Subject: [PATCH 1/3] plat/allwinner: refactor rvbar address
+
+---
+ .../common/include/sunxi_cpucfg_ncat.h         |  4 ----
+ .../common/include/sunxi_cpucfg_ncat2.h        | 11 +++++++++--
+ plat/allwinner/common/sunxi_pm.c               | 18 ++----------------
+ .../sun50i_a64/include/sunxi_cpucfg.h          | 11 +++++++++--
+ .../allwinner/sun50i_h6/include/sunxi_cpucfg.h |  9 +++++++++
+ .../sun50i_h616/include/sunxi_cpucfg.h         | 17 +++++++++++++++++
+ 6 files changed, 46 insertions(+), 24 deletions(-)
+
+diff --git a/plat/allwinner/common/include/sunxi_cpucfg_ncat.h b/plat/allwinner/common/include/sunxi_cpucfg_ncat.h
+index 22828c271..9ace10287 100644
+--- a/plat/allwinner/common/include/sunxi_cpucfg_ncat.h
++++ b/plat/allwinner/common/include/sunxi_cpucfg_ncat.h
+@@ -17,14 +17,10 @@
+ #define SUNXI_CPUCFG_DBG_REG0		(SUNXI_CPUCFG_BASE + 0x00c0)
+ 
+ #define SUNXI_CPUCFG_RST_CTRL_REG(c)	(SUNXI_CPUCFG_BASE + 0x0000 + (c) * 4)
+-#define SUNXI_CPUCFG_RVBAR_LO_REG(n)	(SUNXI_CPUCFG_BASE + 0x0040 + (n) * 8)
+-#define SUNXI_CPUCFG_RVBAR_HI_REG(n)	(SUNXI_CPUCFG_BASE + 0x0044 + (n) * 8)
+ 
+ #define SUNXI_C0_CPU_CTRL_REG(n)	(SUNXI_CPUCFG_BASE + 0x0060 + (n) * 4)
+ 
+ #define SUNXI_CPU_CTRL_REG(n)		(SUNXI_CPUSUBSYS_BASE + 0x20 + (n) * 4)
+-#define SUNXI_ALT_RVBAR_LO_REG(n)	(SUNXI_CPUSUBSYS_BASE + 0x40 + (n) * 8)
+-#define SUNXI_ALT_RVBAR_HI_REG(n)	(SUNXI_CPUSUBSYS_BASE + 0x44 + (n) * 8)
+ 
+ #define SUNXI_POWERON_RST_REG(c)	(SUNXI_R_CPUCFG_BASE + 0x0040 + (c) * 4)
+ #define SUNXI_POWEROFF_GATING_REG(c)	(SUNXI_R_CPUCFG_BASE + 0x0044 + (c) * 4)
+diff --git a/plat/allwinner/common/include/sunxi_cpucfg_ncat2.h b/plat/allwinner/common/include/sunxi_cpucfg_ncat2.h
+index d4aec1932..b0a16b5fe 100644
+--- a/plat/allwinner/common/include/sunxi_cpucfg_ncat2.h
++++ b/plat/allwinner/common/include/sunxi_cpucfg_ncat2.h
+@@ -17,8 +17,6 @@
+ 
+ #define SUNXI_CPUCFG_RST_CTRL_REG(c)	(SUNXI_C0_CPUXCFG_BASE + 0x0000)
+ #define SUNXI_CPUCFG_GEN_CTRL_REG0(c)	(SUNXI_CPUCFG_BASE + 0x0000)
+-#define SUNXI_CPUCFG_RVBAR_LO_REG(n)	(SUNXI_CPUCFG_BASE + 0x0040 + (n) * 8)
+-#define SUNXI_CPUCFG_RVBAR_HI_REG(n)	(SUNXI_CPUCFG_BASE + 0x0044 + (n) * 8)
+ 
+ #define SUNXI_POWERON_RST_REG(c)	(SUNXI_R_CPUCFG_BASE + 0x0040 + (c) * 4)
+ #define SUNXI_POWEROFF_GATING_REG(c)	(SUNXI_R_CPUCFG_BASE + 0x0044 + (c) * 4)
+@@ -33,4 +31,13 @@ static inline bool sunxi_cpucfg_has_per_cluster_regs(void)
+ 	return true;
+ }
+ 
++static inline uintptr_t sunxi_get_rvbar_address(int corenr, bool hi_bits)
++{
++	if (hi_bits) {
++		return (SUNXI_CPUCFG_BASE + 0x0044 + (corenr) * 8);
++	} else {
++		return (SUNXI_CPUCFG_BASE + 0x0040 + (corenr) * 8);
++	}
++}
++
+ #endif /* SUNXI_CPUCFG_H */
+diff --git a/plat/allwinner/common/sunxi_pm.c b/plat/allwinner/common/sunxi_pm.c
+index ebc406b91..fbf1eda52 100644
+--- a/plat/allwinner/common/sunxi_pm.c
++++ b/plat/allwinner/common/sunxi_pm.c
+@@ -25,11 +25,6 @@ bool sunxi_psci_is_scpi(void)
+ }
+ #endif
+ 
+-#ifndef SUNXI_ALT_RVBAR_LO_REG
+-#define SUNXI_ALT_RVBAR_LO_REG(n)	0
+-#define SUNXI_ALT_RVBAR_HI_REG(n)	0
+-#endif
+-
+ int sunxi_validate_ns_entrypoint(uintptr_t ns_entrypoint)
+ {
+ 	/* The non-secure entry point must be in DRAM */
+@@ -47,17 +42,8 @@ int plat_setup_psci_ops(uintptr_t sec_entrypoint,
+ 
+ 	/* Program all CPU entry points. */
+ 	for (unsigned int cpu = 0; cpu < PLATFORM_CORE_COUNT; ++cpu) {
+-		if (sunxi_cpucfg_has_per_cluster_regs()) {
+-			mmio_write_32(SUNXI_CPUCFG_RVBAR_LO_REG(cpu),
+-				      sec_entrypoint & 0xffffffff);
+-			mmio_write_32(SUNXI_CPUCFG_RVBAR_HI_REG(cpu),
+-				      sec_entrypoint >> 32);
+-		} else {
+-			mmio_write_32(SUNXI_ALT_RVBAR_LO_REG(cpu),
+-				      sec_entrypoint & 0xffffffff);
+-			mmio_write_32(SUNXI_ALT_RVBAR_HI_REG(cpu),
+-				      sec_entrypoint >> 32);
+-		}
++		mmio_write_32(sunxi_get_rvbar_address(cpu, false), sec_entrypoint & 0xffffffff);
++		mmio_write_32(sunxi_get_rvbar_address(cpu, true), sec_entrypoint >> 32);
+ 	}
+ 
+ 	if (sunxi_set_scpi_psci_ops(psci_ops) == 0) {
+diff --git a/plat/allwinner/sun50i_a64/include/sunxi_cpucfg.h b/plat/allwinner/sun50i_a64/include/sunxi_cpucfg.h
+index ddd53baab..534cca569 100644
+--- a/plat/allwinner/sun50i_a64/include/sunxi_cpucfg.h
++++ b/plat/allwinner/sun50i_a64/include/sunxi_cpucfg.h
+@@ -19,8 +19,6 @@
+ #define SUNXI_CPUCFG_CPU_STS_REG(c)	(SUNXI_CPUCFG_BASE + 0x0030 + (c) * 4)
+ #define SUNXI_CPUCFG_L2_STS_REG		(SUNXI_CPUCFG_BASE + 0x003c)
+ #define SUNXI_CPUCFG_RST_CTRL_REG(c)	(SUNXI_CPUCFG_BASE + 0x0080 + (c) * 4)
+-#define SUNXI_CPUCFG_RVBAR_LO_REG(n)	(SUNXI_CPUCFG_BASE + 0x00a0 + (n) * 8)
+-#define SUNXI_CPUCFG_RVBAR_HI_REG(n)	(SUNXI_CPUCFG_BASE + 0x00a4 + (n) * 8)
+ 
+ #define SUNXI_CPU_POWER_CLAMP_REG(c, n)	(SUNXI_R_PRCM_BASE + 0x0140 + \
+ 					 (c) * 16 + (n) * 4)
+@@ -41,4 +39,13 @@ static inline bool sunxi_cpucfg_has_per_cluster_regs(void)
+ 	return true;
+ }
+ 
++static inline uintptr_t sunxi_get_rvbar_address(int corenr, bool hi_bits)
++{
++	if (hi_bits) {
++		return (SUNXI_CPUCFG_BASE + 0x00a4 + (corenr) * 8);
++	} else {
++		return (SUNXI_CPUCFG_BASE + 0x00a0 + (corenr) * 8);
++	}
++}
++
+ #endif /* SUNXI_CPUCFG_H */
+diff --git a/plat/allwinner/sun50i_h6/include/sunxi_cpucfg.h b/plat/allwinner/sun50i_h6/include/sunxi_cpucfg.h
+index 585c51b07..e78213d93 100644
+--- a/plat/allwinner/sun50i_h6/include/sunxi_cpucfg.h
++++ b/plat/allwinner/sun50i_h6/include/sunxi_cpucfg.h
+@@ -4,3 +4,12 @@ static inline bool sunxi_cpucfg_has_per_cluster_regs(void)
+ {
+ 	return true;
+ }
++
++static inline uintptr_t sunxi_get_rvbar_address(int corenr, bool hi_bits)
++{
++	if (hi_bits) {
++		return (SUNXI_CPUCFG_BASE + 0x0044 + (corenr) * 8);
++	} else {
++		return (SUNXI_CPUCFG_BASE + 0x0040 + (corenr) * 8);
++	}
++}
+diff --git a/plat/allwinner/sun50i_h616/include/sunxi_cpucfg.h b/plat/allwinner/sun50i_h616/include/sunxi_cpucfg.h
+index 5c590e48b..57f46b81e 100644
+--- a/plat/allwinner/sun50i_h616/include/sunxi_cpucfg.h
++++ b/plat/allwinner/sun50i_h616/include/sunxi_cpucfg.h
+@@ -6,3 +6,20 @@ static inline bool sunxi_cpucfg_has_per_cluster_regs(void)
+ {
+ 	return (plat_get_soc_revision() != 2);
+ }
++
++static inline uintptr_t sunxi_get_rvbar_address(int corenr, bool hi_bits)
++{
++	if (plat_get_soc_revision() != 2) {
++		if (hi_bits) {
++			return (SUNXI_CPUCFG_BASE + 0x0044 + (corenr) * 8);
++		} else {
++			return (SUNXI_CPUCFG_BASE + 0x0040 + (corenr) * 8);
++		}	
++	} else {
++		if (hi_bits) {
++			return (SUNXI_CPUSUBSYS_BASE + 0x44 + (corenr) * 8);
++		} else {
++			return (SUNXI_CPUSUBSYS_BASE + 0x40 + (corenr) * 8);
++		}
++	}
++}
+-- 
+2.48.1
+
